@@ -1,0 +1,603 @@
+<script src="https://cdn.jsdelivr.net/gh/videsigns/webflow-tools@latest/multi-step.js"></script>
+
+<!-- Call Code Select Script-->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script><script src="https://cdn.jsdelivr.net/gh/videsigns/webflow-tools@latest/countrycode.js"> </script>
+
+<!-- Advanced Forms Code -->
+<script src="https://cdn.jsdelivr.net/gh/brotame/advanced-webflow-forms@1/dist/awf.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Initially hide elements
+    document.querySelector('#buses-number').style.display = 'none';
+    document.querySelector('#facilitators-number').style.display = 'none';
+    document.querySelector('#snack-number').style.display = 'none';
+    document.querySelector('#kits-number').style.display = 'none';
+    
+      const confirmBtn = document.getElementById('confirm-people-btn');
+      const errorDiv = document.getElementById('error-people-number'); 
+      let parentsNumberInput = document.getElementById('parents-number');
+      let studentsNumberInput = document.getElementById('students-number');
+    	let teachersNumberInput = document.getElementById('teachers-number');
+            
+            // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+
+      // Set the min attribute of the date input to today
+      document.getElementById('preferred-trip-date').setAttribute('min', today);
+
+      // Initially disable the button and hide the error message
+      confirmBtn.style.opacity = '0.4';
+      confirmBtn.style.pointerEvents = 'none';
+      errorDiv.style.display = 'none';
+
+      // Function to check total count and update button state
+      function checkTotalCount() {
+          const studentsNumber = parseInt(document.getElementById('students-number').value) || 0;
+          const teachersNumber = parseInt(document.getElementById('teachers-number').value) || 0;
+          const parentsNumber = parseInt(parentsNumberInput.value) || 0;
+
+          const totalPeople = studentsNumber + teachersNumber + parentsNumber;
+
+          console.log("Total people count:", totalPeople);
+          
+          const paxMinimumDiv = document.getElementById('pax_minimum_div');
+
+          // Get the data-pax-min attribute value
+          const minimumPax = parseInt(paxMinimumDiv.getAttribute('data-pax-min'), 10);
+
+          // Log the value for debugging
+          console.log("Minimum Pax: ", minimumPax);
+
+
+          if (totalPeople < minimumPax) {
+              errorDiv.style.display = 'block';
+              errorDiv.style.color = 'red';
+              errorDiv.style.fontWeight = 'bold';
+              errorDiv.innerText = `The minimum number of pax should be ${minimumPax}`;
+
+              confirmBtn.style.opacity = '0.4';
+              confirmBtn.style.pointerEvents = 'none';
+          } else {
+              errorDiv.style.display = 'none';
+
+              //confirmBtn.style.opacity = '1';
+              //confirmBtn.style.pointerEvents = 'auto';
+          }
+      }
+
+      // Add onchange event listener to parents-number input field only
+      parentsNumberInput.addEventListener('change', checkTotalCount);
+      studentsNumberInput.addEventListener('input', checkTotalCount);
+      teachersNumberInput.addEventListener('input', checkTotalCount);
+
+      // Ensure button is only enabled after user has interacted with input fields
+      function disableButtonOnFocus() {
+          confirmBtn.style.opacity = '0.4';
+          confirmBtn.style.pointerEvents = 'none';
+          confirmBtn.disabled = true;  // Ensure the button is disabled on focus
+      }
+
+      parentsNumberInput.addEventListener('focus', disableButtonOnFocus);
+      studentsNumberInput.addEventListener('focus', disableButtonOnFocus);
+      teachersNumberInput.addEventListener('focus', disableButtonOnFocus);
+      
+      // Function to handle the button click event
+      function handleConfirmButtonClick(event) {
+          event.preventDefault();  // Prevent the default action of the button or form
+          // Your additional logic here, like form validation or AJAX requests
+          console.log('Confirm button clicked, but no # added to the URL');
+      }
+
+      // Add click event listener to the confirm button
+      confirmBtn.addEventListener('click', handleConfirmButtonClick);
+
+    // Reusable function to toggle visibility based on checkbox state
+    function toggleVisibility(checkboxSelector, elementSelector) {
+        document.querySelector(checkboxSelector).addEventListener('change', function () {
+            var element = document.querySelector(elementSelector);
+            var inputField = element.querySelector('input'); // Select the input inside the element
+            if (this.checked) {
+            		console.log("Checked True",element);
+                element.style.display = 'block';
+            } else {
+            		console.log("Checked False",element);
+                element.style.display = 'none';
+                if (inputField) {
+                    inputField.value = 0;
+                }
+            }
+        });
+    }
+
+    // Use the function for different checkbox and element pairs
+    toggleVisibility('#transportation-yes', '#buses-number');
+    toggleVisibility('#facilitators-yes', '#facilitators-number');
+    toggleVisibility('#snack-yes', '#snack-number');
+    toggleVisibility('#kits-yes', '#kits-number');
+
+    // Function to handle the "Clear All" checkbox
+    function handleClearAllCheckbox() {
+        var clearAllChecked = document.querySelector('#add-ons-no').checked;
+
+        // Define the selectors for the checkboxes and their visual elements (divs with w--redirected-checked)
+        var checkboxes = ['#transportation-yes', '#facilitators-yes', '#snack-yes', '#kits-yes'];
+        var checkboxWrappers = ['#transportation-checkbox', '#facilitators-checkbox', '#snack-checkbox', '#kits-checkbox'];
+        var elements = ['#buses-number', '#facilitators-number', '#snack-number', '#kits-number'];
+
+        if (clearAllChecked) {
+            // Loop through each checkbox and associated element
+            checkboxes.forEach(function(selector, index) {
+                var checkbox = document.querySelector(selector);
+                var wrapper = document.querySelector(checkboxWrappers[index]);
+
+                if (checkbox && wrapper) {
+                    // Uncheck the checkbox (input element)
+                    checkbox.checked = false;
+
+                    // Remove the custom 'w--redirected-checked' class from the visual div
+                    var visualCheckbox = wrapper.querySelector('.w-checkbox-input');
+                    if (visualCheckbox) {
+                        visualCheckbox.classList.remove('w--redirected-checked');
+                    }
+
+                    // Disable the checkbox (optional)
+                    checkbox.disabled = true;
+
+                    // Hide associated element and reset input value
+                    var element = document.querySelector(elements[index]);
+                    if (element) {
+                        element.style.display = 'none';
+
+                        // Reset the input field's value inside the element
+                        var inputField = element.querySelector('input');
+                        if (inputField) {
+                            inputField.value = 0; // Reset value
+                        }
+                    }
+                }
+            });
+        } else {
+            // Re-enable all checkboxes but don't check them automatically
+            checkboxes.forEach(function(selector, index) {
+                var checkbox = document.querySelector(selector);
+                var wrapper = document.querySelector(checkboxWrappers[index]);
+
+                if (checkbox && wrapper) {
+                    // Re-enable the checkbox
+                    checkbox.disabled = false;
+
+                    // Ensure the checkbox remains unchecked
+                    checkbox.checked = false;
+
+                    // Keep the associated elements hidden until checkboxes are manually checked again
+                    var element = document.querySelector(elements[index]);
+                    if (element) {
+                        element.style.display = 'none';
+                    }
+
+                    // Remove 'w--redirected-checked' class to ensure checkbox looks unchecked
+                    var visualCheckbox = wrapper.querySelector('.w-checkbox-input');
+                    if (visualCheckbox) {
+                        visualCheckbox.classList.remove('w--redirected-checked');
+                    }
+                }
+            });
+        }
+    }
+
+    // Attach event listener to the "Clear All" checkbox
+    var noThanksCheckbox = document.querySelector('#add-ons-no');
+    if (noThanksCheckbox) {
+        noThanksCheckbox.addEventListener('change', handleClearAllCheckbox);
+    }
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    function getQueryParam(param) {
+        let urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+	
+    let persistentOriginalPrice = null;
+    let persistentPromoPrice = null;
+    let persistentPriceToShow = null;
+
+    // Persistent variables for other prices
+    let persistentTransportationPrice = 0;
+    let persistentFacilitatorPrice = 0;
+    let persistentSnackPrice = 0;
+    let persistentKitsPrice = 0;
+    let persistentnumberStudents = 0;
+    let persistentnumberTeachers = 0;
+    let persistentnumberParents = 0;
+    
+    // Function to check if "No Thanks" checkbox is checked
+    function handleNoThanksCheck() {
+        let noThanksChecked = document.querySelector('#add-ons-no').checked;
+
+        if (noThanksChecked) {
+            // Set all persistent prices to 0
+            persistentTransportationPrice = 0;
+            persistentFacilitatorPrice = 0;
+            persistentSnackPrice = 0;
+            persistentKitsPrice = 0;
+            
+            // Also update the DOM elements to reflect the changes
+            document.getElementById('transportation-price-display').textContent = "0";
+            document.getElementById('facilitator-price-display').textContent = "0";
+            document.getElementById('snack-price-display').textContent = "0";
+            document.getElementById('kits-price-display').textContent = "0";
+            
+            console.log("No Thanks checked: Setting all prices to 0");
+        }
+    }
+
+    // Attach event listener to the "No Thanks" checkbox to reset values when checked
+    var noThanksCheckbox = document.querySelector('#add-ons-no');
+    if (noThanksCheckbox) {
+            noThanksCheckbox.addEventListener('change', function() {
+                handleNoThanksCheck(); // Set prices to 0 when "No Thanks" is checked
+                updatePrice(document.querySelector('[name="trip-dropdown"]').value); // Recalculate total price
+            });
+    }
+
+      function updatePrice(selectedTrip) {
+     			handleNoThanksCheck();
+          let priceContainers = document.querySelectorAll('.trip-prices > div');
+          let priceFound = false;
+          let transportationPriceFound = false;
+          let facilitatorPriceFound = false;
+          let snackPriceFound = false;
+          let kitsPriceFound = false;
+          let totalStudentsPriceFound = false;
+          let totalTeachersPriceFound = false;
+          let totalParentsPriceFound = false;
+          let totalPriceFound = false;
+          let perPaxPriceFound = false;
+
+          priceContainers.forEach(element => {
+              let tripName = element.getAttribute('data-trip');
+							
+              console.log("Trip Name", tripName);
+              
+              if (tripName === selectedTrip) {
+                  let originalPrice = element.getAttribute('data-original-price');
+                  let promoPrice = element.getAttribute('data-promo-price');
+                  // Retain values if not null or undefined
+                  if (originalPrice !== null && originalPrice !== undefined) {
+                      persistentOriginalPrice = originalPrice;
+                  }
+                  if (promoPrice !== null && promoPrice !== undefined) {
+                      persistentPromoPrice = promoPrice;
+                  }
+
+                  // Determine which price to show
+                  let priceToShow = persistentPromoPrice ? persistentPromoPrice : persistentOriginalPrice;
+                  persistentPriceToShow = priceToShow; // Keep a persistent copy
+
+                  console.log("Get URL Original Price: ", persistentOriginalPrice);
+                  console.log("Promo Price: ", persistentPromoPrice);
+                  console.log("Check which price[Promo or Original]: ", persistentPriceToShow);
+
+                    // Fetch and parse prices as floats
+                    let transportationPrice = parseFloat(element.getAttribute('data-transportation-price')) || persistentTransportationPrice;
+                    let facilitatorPrice = parseFloat(element.getAttribute('data-facilitator-price')) || persistentFacilitatorPrice;
+                    let snackPrice = parseFloat(element.getAttribute('data-snack-price')) || persistentSnackPrice;
+                    let kitsPrice = parseFloat(element.getAttribute('data-kits-price')) || persistentKitsPrice;
+
+                    // Retain transportation price if valid
+                    if (transportationPrice && transportationPrice > 0) {
+                        persistentTransportationPrice = transportationPrice;
+                        console.log("Trip Name: ", tripName);
+                        console.log("Transportation Price: ", persistentTransportationPrice);
+                    } else {
+                        console.log("Transportation Price: N/A");
+                        document.getElementById("transportation-yes").style.display = "none";
+                    }
+
+                    // Retain facilitator price if valid
+                    if (facilitatorPrice && facilitatorPrice > 0) {
+                        persistentFacilitatorPrice = facilitatorPrice;
+                        console.log("Trip Name: ", tripName);
+                        console.log("Facilitator Price: ", persistentFacilitatorPrice);
+                    } else {
+                        console.log("Facilitator Price: N/A");
+                        document.getElementById("facilitators-yes").style.display = "none";
+                    }
+
+                    // Retain snack price if valid
+                    if (snackPrice && snackPrice > 0) {
+                        persistentSnackPrice = snackPrice;
+                        console.log("Trip Name: ", tripName);
+                        console.log("Snack Price: ", persistentSnackPrice);
+                    } else {
+                        console.log("Snack Price: N/A");
+                        document.getElementById("snack-yes").style.display = "none";
+                    }
+
+                    // Retain kits price if valid
+                    if (kitsPrice && kitsPrice > 0) {
+                        persistentKitsPrice = kitsPrice;
+                        console.log("Trip Name: ", tripName);
+                        console.log("Kits Price: ", persistentKitsPrice);
+                    } else {
+                        console.log("Kits Price: N/A");
+                        document.getElementById("kits-yes").style.display = "none";
+                    }
+                    
+                                        
+                    if (persistentnumberStudents && persistentnumberStudents > 0) {
+                        persistentnumberStudents = persistentnumberStudents;
+                        console.log("Number of Students: ", persistentnumberStudents);
+                    } else {
+                        console.log("Number of Students: N/A");
+                    }
+
+                    if (persistentnumberTeachers && persistentnumberTeachers > 0) {
+                        persistentnumberTeachers = persistentnumberTeachers;
+                        console.log("Number of Teachers: ", persistentnumberTeachers);
+                    } else {
+                        console.log("Number of Teachers: N/A");
+                    }
+
+                    if (persistentnumberParents && persistentnumberParents > 0) {
+                        persistentnumberParents = persistentnumberParents;
+                        console.log("Number of Parents: ", persistentnumberParents);
+                    } else {
+                        console.log("Number of Parents: N/A");
+                    }
+
+                  let basicPriceDisplay = document.getElementById('basic-price-display');
+                  let basicPriceDisplay2 = document.getElementById('basic-price-display-2');
+                  let transportationPriceDisplay = document.getElementById('transportation-price-display');
+                  let facilitatorPriceDisplay = document.getElementById('facilitator-price-display');
+                  let snackPriceDisplay = document.getElementById('snack-price-display');
+                  let kitsPriceDisplay = document.getElementById('kits-price-display');
+                  let totalStudentsPriceDisplay = document.getElementById('total-students-price-display');
+                  let totalTeachersPriceDisplay = document.getElementById('total-teachers-price-display');
+                  let totalParentsPriceDisplay = document.getElementById('total-parents-price-display');
+                  let totalPriceDisplay = document.getElementById('total-price-display');
+                  let perPaxPriceDisplay = document.getElementById('per-pax-price-display');
+                  let tripSelectedFinal = document.getElementById('trip-selected-final');
+
+                  if (selectedTrip == tripName) {
+                      tripSelectedFinal.textContent = tripName;
+                  }
+
+                  let busNumber = parseInt(document.getElementById('bus-number').value) || 0;
+                  let facilitatorNumber = parseInt(document.getElementById('facilitator-number').value) || 0;
+                  let snackPacksNumber = parseInt(document.getElementById('snack-packs-number').value) || 0;
+                  let activityKitsNumber = parseInt(document.getElementById('activity-kits-number').value) || 0;
+                  let numberStudents = parseInt(document.getElementById('students-number').value) || persistentnumberStudents;
+                  let numberTeachers = parseInt(document.getElementById('teachers-number').value) || persistentnumberTeachers;
+                  let numberParents = parseInt(document.getElementById('parents-number').value) || persistentnumberParents;
+                  let totalNumberPeople = numberStudents + numberTeachers + numberParents;
+                  let totalPrice = (priceToShow * totalNumberPeople) + 
+                      (transportationPrice * busNumber) + 
+                      (facilitatorPrice * facilitatorNumber) + 
+                      (snackPrice * snackPacksNumber) + 
+                      (kitsPrice * activityKitsNumber);
+                      
+                    if (basicPriceDisplay && persistentPriceToShow) {
+                        basicPriceDisplay.textContent = `${persistentPriceToShow}`;
+                        priceFound = true;
+                    }
+                    if (basicPriceDisplay2 && persistentPriceToShow) {
+                        basicPriceDisplay2.textContent = `${persistentPriceToShow}`;
+                        priceFound = true;
+                    }
+                    
+                    if (basicPriceDisplay && persistentPriceToShow) {
+                        document.getElementById('Basic-Price-Input').value = `${persistentPriceToShow}`;
+                        priceFound = true;
+                    }
+                    
+                    if (transportationPriceDisplay && persistentTransportationPrice) {
+                        document.getElementById('Transportation-Price-Input').value = `${persistentTransportationPrice}`;
+                        transportationPriceFound = true;
+                    }
+
+                    if (transportationPriceDisplay && persistentTransportationPrice) {
+                        transportationPriceDisplay.textContent = `${persistentTransportationPrice * busNumber}`;
+                        transportationPriceFound = true;
+                    }
+                    
+                    if (facilitatorPriceDisplay && persistentFacilitatorPrice) {
+                        document.getElementById('Facilitator-Price-Input').value = `${persistentFacilitatorPrice}`;
+                        facilitatorPriceFound = true;
+                    }
+                    if (facilitatorPriceDisplay && persistentFacilitatorPrice) {
+                        facilitatorPriceDisplay.textContent = `${persistentFacilitatorPrice * facilitatorNumber}`;
+                        facilitatorPriceFound = true;
+                    }
+                    
+                    if (snackPriceDisplay && persistentSnackPrice) {
+                        document.getElementById('Snack-Packs-Price-Input').value = `${persistentSnackPrice}`;
+                        snackPriceFound = true;
+                    }
+                    if (snackPriceDisplay && persistentSnackPrice) {
+                        snackPriceDisplay.textContent = `${persistentSnackPrice * snackPacksNumber}`;
+                        snackPriceFound = true;
+                    }
+                    
+                    if (kitsPriceDisplay && persistentKitsPrice) {
+                        document.getElementById('Kits-Price-Input').value = `${persistentKitsPrice}`;
+                        kitsPriceFound = true;
+                    }
+                    if (kitsPriceDisplay && persistentKitsPrice) {
+                        kitsPriceDisplay.textContent = `${persistentKitsPrice * activityKitsNumber}`;
+                        kitsPriceFound = true;
+                    }
+
+                    if (totalStudentsPriceDisplay && persistentPriceToShow) {
+                        totalStudentsPriceDisplay.textContent = `${persistentPriceToShow * numberStudents}`; // Use persistentPriceToShow
+                        totalStudentsPriceFound = true;
+                    }
+                    if (totalTeachersPriceDisplay && persistentPriceToShow) {
+                        totalTeachersPriceDisplay.textContent = `${persistentPriceToShow * numberTeachers}`; // Use persistentPriceToShow
+                        totalTeachersPriceFound = true;
+                    }
+                    if (totalParentsPriceDisplay && persistentPriceToShow) {
+                        totalParentsPriceDisplay.textContent = `${persistentPriceToShow * numberParents}`; // Use persistentPriceToShow
+                        totalParentsPriceFound = true;
+                    }
+                    if (totalPriceDisplay && persistentPriceToShow) {  // Check totalPrice directly
+                        console.log("Updating total-price-display with Second Total Price: ", totalPrice);
+                        totalPriceDisplay.textContent = `${totalPrice}`;  // Add formatting with a currency symbol
+                        totalPriceFound = true;
+                    }
+
+
+                    if (perPaxPriceDisplay && persistentPriceToShow) {
+                        if (totalNumberPeople > 0) {
+                            perPaxPriceDisplay.textContent = `${(totalPrice / totalNumberPeople).toFixed(2)}`; // Use totalPrice for per-pax calculation
+                            console.log("Total Price: ", totalPrice);
+                            console.log("Total Number of People: ", totalNumberPeople);
+                        } else {
+                            perPaxPriceDisplay.textContent = "N/A"; // Handle cases where totalNumberPeople is 0
+                        }
+                        perPaxPriceFound = true;
+                    }
+                    
+                  // Call the hidden field updater
+                  document.getElementById('Total-Transportation-Fee-Input').value = document.getElementById('transportation-price-display').textContent.trim();
+                  document.getElementById('Total-Trip-Facilitators-Fee-Input').value = document.getElementById('facilitator-price-display').textContent.trim();
+                  document.getElementById('Total-Snack-Packs-Fee-Input').value = document.getElementById('snack-price-display').textContent.trim();
+                  document.getElementById('Total-Kits-Fee-Input').value = document.getElementById('kits-price-display').textContent.trim();
+                  document.getElementById('Total-Students-Price-Input').value = document.getElementById('total-students-price-display').textContent.trim();
+                  document.getElementById('Total-Teachers-Price-Input').value = document.getElementById('total-teachers-price-display').textContent.trim();
+                  document.getElementById('Total-Parents-Price-Input').value = document.getElementById('total-parents-price-display').textContent.trim();
+                  document.getElementById('Total-Price-Input').value = document.getElementById('total-price-display').textContent.trim();
+                  document.getElementById('Total-Per-Pax-Price-Input').value = document.getElementById('per-pax-price-display').textContent.trim();
+            }
+          });
+
+          if (!priceFound) {
+              let basicPriceDisplay = document.getElementById('basic-price-display');
+              if (basicPriceDisplay) {
+                  basicPriceDisplay.textContent = "Price information not available.";
+              }
+          }
+          if (!transportationPriceFound) {
+              let transportationPriceDisplay = document.getElementById('transportation-price-display');
+              if (transportationPriceDisplay) {
+              transportationPriceDisplay.textContent = "0";
+                  $('#buses-number').hide();
+                  $('#transportation-checkbox').hide();
+              }
+          }
+          if (!facilitatorPriceFound) {
+              let facilitatorPriceDisplay = document.getElementById('facilitator-price-display');
+              if (facilitatorPriceDisplay) {
+              facilitatorPriceDisplay.textContent = "0";
+                  $('#facilitators-number').hide();
+                  $('#facilitators-checkbox').hide();
+              }
+          }
+          if (!snackPriceFound) {
+              let snackPriceDisplay = document.getElementById('snack-price-display');
+              if (snackPriceDisplay) {
+              snackPriceDisplay.textContent = "0";
+                  $('#snack-number').hide();
+                  $('#snack-checkbox').hide();
+              }
+          }
+          if (!kitsPriceFound) {
+              let kitsPriceDisplay = document.getElementById('kits-price-display');
+              if (kitsPriceDisplay) {
+              kitsPriceDisplay.textContent = "0";
+                  $('#kits-number').hide();
+                  $('#kits-checkbox').hide();
+              }
+          }
+          if (!totalStudentsPriceFound) {
+              let totalStudentsPriceDisplay = document.getElementById('total-students-price-display');
+              if (totalStudentsPriceDisplay) {
+                  totalStudentsPriceDisplay.textContent = "Total price information not available.";
+              }
+          }
+          if (!totalTeachersPriceFound) {
+              let totalTeachersPriceDisplay = document.getElementById('total-teachers-price-display');
+              if (totalTeachersPriceDisplay) {
+                  totalTeachersPriceDisplay.textContent = "Total price information not available.";
+              }
+          }
+          if (!totalParentsPriceFound) {
+              let totalParentsPriceDisplay = document.getElementById('total-parents-price-display');
+              if (totalParentsPriceDisplay) {
+                  totalParentsPriceDisplay.textContent = "Total price information not available.";
+              }
+          }
+          if (!totalPriceFound) {
+              let totalPriceDisplay = document.getElementById('total-price-display');
+              if (totalPriceDisplay) {
+                  totalPriceDisplay.textContent = "Total price information not available.";
+              }
+          }
+          if (!perPaxPriceFound) {
+              let perPaxPriceDisplay = document.getElementById('per-pax-price-display');
+              if (perPaxPriceDisplay) {
+                  perPaxPriceDisplay.textContent = "Per pax price information not available.";
+              }
+          }
+      }
+
+      let selectedTrip = getQueryParam('trip');
+      
+        // Check if the trip query parameter is present, then if trip dropdown changes, then reload the page with the new trip query parameter value
+      if (selectedTrip) {
+          let tripDropdown = document.querySelector('[name="trip-dropdown"]');
+          tripDropdown.addEventListener('change', function() {
+              let selectedTrip = this.value;
+              window.location.href = window.location.pathname + '?trip=' + selectedTrip;
+          });
+      }
+
+
+      if (selectedTrip) {
+          let tripDropdown = document.querySelector('[name="trip-dropdown"]');
+          if (tripDropdown) {
+              for (let option of tripDropdown.options) {
+                  if (option.value === selectedTrip) {
+                      option.selected = true;
+                      updatePrice(selectedTrip);
+                      break;
+                  }
+              }
+          }
+      }
+
+      let tripDropdown = document.querySelector('[name="trip-dropdown"]');
+      if (tripDropdown) {
+          tripDropdown.addEventListener('change', function() {
+              let selectedTrip = this.value;
+              updatePrice(selectedTrip);
+          });
+      }
+
+      // Listen for changes in number of add-on inputs
+      let addOnInputs = document.querySelectorAll('#bus-number, #facilitator-number, #snack-packs-number, #activity-kits-number');
+      addOnInputs.forEach(input => {
+          input.addEventListener('input', function() {
+              let selectedTrip = tripDropdown.value;
+              updatePrice(selectedTrip);
+          });
+      });
+
+      // Listen for changes in number of people inputs
+      let peopleInputs = document.querySelectorAll('#students-number, #teachers-number, #parents-number');
+      peopleInputs.forEach(input => {
+          input.addEventListener('input', function() {
+              let selectedTrip = tripDropdown.value;
+              updatePrice(selectedTrip);
+          });
+      });
+	});
+
+</script>
